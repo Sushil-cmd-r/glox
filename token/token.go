@@ -15,3 +15,8 @@ func New(Type TokenType, Literal string, Loc location.Location) Token {
 		Loc:     Loc,
 	}
 }
+
+var KeyWords = map[string]TokenType{
+	"fn":  Function,
+	"let": Let,
+}

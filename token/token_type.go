@@ -21,4 +21,8 @@ const (
 	RParen = ")"
 	LCurly = "{"
 	RCurly = "}"
+
+	// Keywords
+	Function = "fn"
+	Let      = "let"
 )

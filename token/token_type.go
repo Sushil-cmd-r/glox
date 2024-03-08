@@ -12,6 +12,17 @@ const (
 	// Operators
 	Assign = "="
 	Plus   = "+"
+	Minus  = "-"
+	Bang   = "!"
+	Star   = "*"
+	Slash  = "/"
+
+	LessThan    = "<"
+	LessEq      = "<="
+	GreaterThan = ">"
+	GreaterEq   = ">="
+	Equal       = "=="
+	NotEq       = "!="
 
 	// Delimiters
 	Comma = ","
@@ -23,6 +34,11 @@ const (
 	RCurly = "}"
 
 	// Keywords
-	Function = "fn"
-	Let      = "let"
+	Function = "Function"
+	Let      = "Let"
+	True     = "True"
+	False    = "False"
+	If       = "If"
+	Else     = "Else"
+	Return   = "Return"
 )

@@ -1,6 +1,10 @@
 package token
 
-import "github.com/sushil-cmd-r/glox/location"
+import (
+	"fmt"
+
+	"github.com/sushil-cmd-r/glox/location"
+)
 
 type Token struct {
 	Type    TokenType
@@ -17,6 +21,22 @@ func New(Type TokenType, Literal string, Loc location.Location) Token {
 }
 
 var KeyWords = map[string]TokenType{
-	"fn":  Function,
-	"let": Let,
+	"fn":     Function,
+	"let":    Let,
+	"true":   True,
+	"false":  False,
+	"if":     If,
+	"else":   Else,
+	"return": Return,
+}
+
+func (t Token) String() string {
+	return fmt.Sprintf(
+		"%s:%d:%d: %s -> %s",
+		t.Loc.FilePath,
+		t.Loc.Row,
+		t.Loc.Col,
+		t.Literal,
+		t.Type,
+	)
 }

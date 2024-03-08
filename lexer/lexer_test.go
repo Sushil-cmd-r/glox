@@ -1,63 +1,44 @@
 package lexer
 
 import (
-	"fmt"
 	"testing"
-
-	"github.com/sushil-cmd-r/glox/token"
 )
 
 func TestNext(t *testing.T) {
-	input := "  =+{}(),;\n1.23 "
-
-	tests := []struct {
-		expectedType    token.TokenType
-		expectedLiteral string
-		expectedPos     string
-	}{
-		{expectedType: token.Assign, expectedLiteral: "=", expectedPos: "1:3"},
-		{expectedType: token.Plus, expectedLiteral: "+", expectedPos: "1:4"},
-		{expectedType: token.LCurly, expectedLiteral: "{", expectedPos: "1:5"},
-		{expectedType: token.RCurly, expectedLiteral: "}", expectedPos: "1:6"},
-		{expectedType: token.LParen, expectedLiteral: "(", expectedPos: "1:7"},
-		{expectedType: token.RParen, expectedLiteral: ")", expectedPos: "1:8"},
-		{expectedType: token.Comma, expectedLiteral: ",", expectedPos: "1:9"},
-		{expectedType: token.Semi, expectedLiteral: ";", expectedPos: "1:10"},
-		{expectedType: token.Number, expectedLiteral: "1.23", expectedPos: "2:1"},
-		{expectedType: token.Eof, expectedLiteral: "Eof", expectedPos: "2:6"},
+	tests := []string{
+		"main.glox:1:1: 12 -> Number",
+		"main.glox:1:4: + -> +",
+		"main.glox:1:6: 12 -> Number",
+		"main.glox:2:1: - -> -",
+		"main.glox:2:2: / -> /",
+		"main.glox:2:3: * -> *",
+		"main.glox:2:4: > -> >",
+		"main.glox:2:5: + -> +",
+		"main.glox:2:6: <= -> <=",
+		"main.glox:3:1: == -> ==",
+		"main.glox:3:3: 12 -> Number",
+		"main.glox:4:1: 32.53 -> Number",
+		"main.glox:4:7: >= -> >=",
+		"main.glox:4:10: 42 -> Number",
+		"main.glox:5:1: 10 -> Number",
+		"main.glox:5:4: != -> !=",
+		"main.glox:5:7: 24506343 -> Number",
+		"main.glox:7:1: ! -> !",
+		"main.glox:7:2: 2424 -> Number",
+		"main.glox:8:1: let -> Let",
+		"main.glox:8:5: five -> Identifier",
+		"main.glox:8:10: = -> =",
+		"main.glox:8:12: 5 -> Number",
+		"main.glox:8:13: ; -> ;",
 	}
 
-	lex := New(input, "test")
+	l := New("../main.glox")
 
 	for i, tt := range tests {
-		tok := lex.Next()
+		tok := l.Next()
 
-		if tok.Type != tt.expectedType {
-			t.Fatalf(
-				"tests[%d] - tokenType wrong, expected: %q, got: %q ",
-				i,
-				tt.expectedType,
-				tok.Type,
-			)
-		}
-
-		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf(
-				"tests[%d] - tokenLiteral wrong, expected: %q, got: %q ",
-				i,
-				tt.expectedLiteral,
-				tok.Literal,
-			)
-		}
-
-		pos := fmt.Sprintf("%d:%d", tok.Loc.Row, tok.Loc.Col)
-		if pos != tt.expectedPos {
-			t.Fatalf(
-				"tests[%d] - tokenPos wrong, expected: %q, got: %q ",
-				i,
-				tt.expectedPos,
-				pos,
-			)
+		if tok.String() != tt {
+			t.Fatalf("test[%d] failed: expected: %q, got: %q", i, tt, tok.String())
 		}
 	}
 }

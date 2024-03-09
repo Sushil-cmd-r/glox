@@ -1,7 +1,6 @@
 package lexer
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -25,7 +24,6 @@ func New(path string) *Lexer {
 	}
 
 	fileName := filepath.Base(path)
-	fmt.Print(fileName)
 	return &Lexer{
 		FileName:   fileName,
 		Source:     string(content),
@@ -66,43 +64,21 @@ func (l *Lexer) Next() token.Token {
 
 			// Double character Tokens
 		case '=':
-			if l.peek() == '=' {
-				l.advance()
-				return token.New(token.Equal, "==", loc)
-			}
-			return token.New(token.Assign, "=", loc)
+			return l.switch1(token.Equal, token.Assign, "==", "=", loc)
 
 		case '!':
-			if l.peek() == '=' {
-				l.advance()
-				return token.New(token.NotEq, "!=", loc)
-			}
-			return token.New(token.Bang, "!", loc)
+			return l.switch1(token.NotEq, token.Bang, "!=", "!", loc)
 
 		case '>':
-			if l.peek() == '=' {
-				l.advance()
-				return token.New(
-					token.GreaterEq,
-					">=",
-					loc,
-				)
-			}
-			return token.New(token.GreaterThan, ">", loc)
+			return l.switch1(token.GreaterEq, token.GreaterThan, ">=", ">", loc)
 
 		case '<':
-			if l.peek() == '=' {
-				l.advance()
-				return token.New(token.LessEq, "<=", loc)
-			}
-			return token.New(token.LessThan, "<", loc)
+			return l.switch1(token.LessEq, token.LessThan, "<=", "<", loc)
 
 			// Ignore Comments (Only Inline Comments Supported)
 		case '/':
 			if l.peek() == '/' {
-				for l.peek() != '\n' {
-					l.advance()
-				}
+				l.scanComment()
 			} else {
 				return token.New(token.Slash, "/", loc)
 			}
@@ -115,9 +91,9 @@ func (l *Lexer) Next() token.Token {
 
 		default:
 			if isNum(ch) {
-				return l.number()
+				return l.scanNumber()
 			} else if isChar(ch) {
-				return l.Identifier()
+				return l.scanIdent()
 			}
 			return token.New(token.Illegal, "Unknown Character", loc)
 		}
@@ -126,7 +102,7 @@ func (l *Lexer) Next() token.Token {
 	return token.New(token.Eof, "Eof", location.New(l.FileName, l.Line, l.LineOffset+1))
 }
 
-func (l *Lexer) number() token.Token {
+func (l *Lexer) scanNumber() token.Token {
 	pos := l.LineOffset
 	dotCnt := 0
 
@@ -147,8 +123,8 @@ func (l *Lexer) number() token.Token {
 	return token.New(token.Number, tok, loc)
 }
 
-func (l *Lexer) Identifier() token.Token {
-	pos := location.New(l.FileName, l.Line, l.LineOffset)
+func (l *Lexer) scanIdent() token.Token {
+	loc := location.New(l.FileName, l.Line, l.LineOffset)
 
 	for isChar(l.peek()) {
 		l.advance()
@@ -157,11 +133,12 @@ func (l *Lexer) Identifier() token.Token {
 	tok := l.Source[l.Offset:l.RdOffset]
 	tokType, ok := token.KeyWords[tok]
 	if !ok {
-		return token.New(token.Identifier, tok, pos)
+		return token.New(token.Identifier, tok, loc)
 	}
-	return token.New(tokType, tok, pos)
+	return token.New(tokType, tok, loc)
 }
 
+// Lexer Helpers
 func (l *Lexer) advance() byte {
 	l.RdOffset += 1
 	l.LineOffset += 1
@@ -177,6 +154,20 @@ func (l *Lexer) peek() byte {
 
 func (l *Lexer) isAtEnd() bool {
 	return l.RdOffset >= len(l.Source)
+}
+
+func (l *Lexer) switch1(t1, t2 token.TokenType, l1, l2 string, loc location.Location) token.Token {
+	if l.peek() == '=' {
+		l.advance()
+		return token.New(t1, l1, loc)
+	}
+	return token.New(t2, l2, loc)
+}
+
+func (l *Lexer) scanComment() {
+	for l.peek() != '\n' {
+		l.advance()
+	}
 }
 
 func isNum(ch byte) bool {

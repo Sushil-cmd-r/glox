@@ -48,6 +48,8 @@ func New(lex *lexer.Lexer) *Parser {
 
 	prs.registerPrefixFns(token.Identifier, prs.parseIdentifier)
 	prs.registerPrefixFns(token.Number, prs.parserNumberLiteral)
+	prs.registerPrefixFns(token.Bang, prs.parsePrefixExpr)
+	prs.registerPrefixFns(token.Minus, prs.parsePrefixExpr)
 
 	prs.advance()
 	prs.advance()
@@ -185,6 +187,18 @@ func (p *Parser) parserNumberLiteral() ast.Expr {
 	lit.Value = value
 
 	return lit
+}
+
+func (p *Parser) parsePrefixExpr() ast.Expr {
+	expr := &ast.PrefixExpr{
+		Token:    p.currTok,
+		Operator: p.currTok.Literal,
+	}
+	p.advance()
+
+	expr.Right = p.parseExpression(PREFIX)
+
+	return expr
 }
 
 func (p *Parser) synchronize() {

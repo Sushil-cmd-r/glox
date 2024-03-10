@@ -59,6 +59,13 @@ type NumberLiteral struct {
 	Value float64
 }
 
+// Prefix Expr
+type PrefixExpr struct {
+	Token    token.Token
+	Operator string
+	Right    Expr
+}
+
 func (ls *LetStmt) stmtNode() {}
 func (ls *LetStmt) TokenLiteral() string {
 	return ls.Token.Literal
@@ -82,4 +89,9 @@ func (es *ExpressionStmt) TokenLiteral() string {
 func (nl *NumberLiteral) exprNode() {}
 func (nl *NumberLiteral) TokenLiteral() string {
 	return nl.Token.Literal
+}
+
+func (pe *PrefixExpr) exprNode() {}
+func (pe *PrefixExpr) TokenLiteral() string {
+	return pe.Token.Literal
 }

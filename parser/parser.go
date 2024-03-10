@@ -56,8 +56,10 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 	switch p.currTok.Type {
 	case token.Let:
 		return p.parseLetStmt()
+	case token.Return:
+		return p.parseReturnStmt()
 	default:
-		return nil, fmt.Errorf("unknown statement: %s ", p.currTok.Literal)
+		return nil, fmt.Errorf("unknown statement: %s", p.currTok.Literal)
 	}
 }
 
@@ -87,10 +89,24 @@ func (p *Parser) parseLetStmt() (*ast.LetStmt, error) {
 	return stmt, nil
 }
 
+func (p *Parser) parseReturnStmt() (*ast.ReturnStmt, error) {
+	stmt := &ast.ReturnStmt{
+		Token: p.currTok,
+	}
+	p.advance()
+
+	// TODO: Skip return value for now
+	for !p.currTokIs(token.Semi) {
+		p.advance()
+	}
+
+	return stmt, nil
+}
+
 func (p *Parser) synchronize() {
 	for p.peekTok.Type != token.Eof {
 		switch p.peekTok.Type {
-		case token.Let:
+		case token.Let, token.Return:
 			return
 		}
 

@@ -42,6 +42,36 @@ func TestLeTStmt(t *testing.T) {
 	}
 }
 
+func TestReturnStmt(t *testing.T) {
+	input := `
+  return 5;
+  return 10;
+  return 538226;
+  `
+	lex := lexer.New(input, "test.glox")
+	prs := New(lex)
+
+	program := prs.ParseProgram()
+	checkParserErrors(t, prs)
+	if program == nil {
+		t.Fatal("ParseProgram() returned <nil>")
+	}
+	if len(program.Stmts) != 3 {
+		t.Fatalf("program.Stmts does not contain 3 statements. got=%d", len(program.Stmts))
+	}
+
+	for _, stmt := range program.Stmts {
+		retStmt, ok := stmt.(*ast.ReturnStmt)
+		if !ok {
+			t.Errorf("stmt not *ast.ReturnStmt. got=%T", stmt)
+			continue
+		}
+		if retStmt.TokenLiteral() != "return" {
+			t.Errorf("returnStmt.TokenLiteral() not 'return', got=%q", retStmt.TokenLiteral())
+		}
+	}
+}
+
 func testLetStmt(t *testing.T, s ast.Stmt, expected string) bool {
 	if s.TokenLiteral() != "let" {
 		t.Errorf("s.TokenLiteral not `let`. got=%q", s.TokenLiteral())

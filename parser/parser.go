@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/sushil-cmd-r/glox/ast"
 	"github.com/sushil-cmd-r/glox/lexer"
@@ -46,6 +47,7 @@ func New(lex *lexer.Lexer) *Parser {
 	}
 
 	prs.registerPrefixFns(token.Identifier, prs.parseIdentifier)
+	prs.registerPrefixFns(token.Number, prs.parserNumberLiteral)
 
 	prs.advance()
 	prs.advance()
@@ -59,13 +61,6 @@ func (p *Parser) registerPrefixFns(tt token.TokenType, fn prefixParseFn) {
 
 func (p *Parser) registerInfixFns(tt token.TokenType, fn infixParseFn) {
 	p.infixParseFns[tt] = fn
-}
-
-func (p *Parser) parseIdentifier() ast.Expr {
-	return &ast.IdentExpr{
-		Token: p.currTok,
-		Value: p.currTok.Literal,
-	}
 }
 
 func (p *Parser) Errors() []error {
@@ -150,7 +145,7 @@ func (p *Parser) parseExpressionStmt() (*ast.ExpressionStmt, error) {
 
 	stmt.Expression = p.parseExpression(LOWEST)
 	if stmt.Expression == nil {
-		return nil, fmt.Errorf("unknown expression %s ", p.currTok.Literal)
+		return nil, fmt.Errorf(`unknown expression %s `, p.currTok.Literal)
 	}
 
 	if p.peekTokIs(token.Semi) {
@@ -168,6 +163,28 @@ func (p *Parser) parseExpression(_ Precedence) ast.Expr {
 	leftExpr := prefix()
 
 	return leftExpr
+}
+
+func (p *Parser) parseIdentifier() ast.Expr {
+	return &ast.IdentExpr{
+		Token: p.currTok,
+		Value: p.currTok.Literal,
+	}
+}
+
+func (p *Parser) parserNumberLiteral() ast.Expr {
+	lit := &ast.NumberLiteral{
+		Token: p.currTok,
+	}
+
+	value, err := strconv.ParseFloat(p.currTok.Literal, 64)
+	if err != nil {
+		return nil
+	}
+
+	lit.Value = value
+
+	return lit
 }
 
 func (p *Parser) synchronize() {

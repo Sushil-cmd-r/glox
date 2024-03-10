@@ -1,6 +1,8 @@
 package ast
 
-import "github.com/sushil-cmd-r/glox/token"
+import (
+	"github.com/sushil-cmd-r/glox/token"
+)
 
 type Node interface {
 	TokenLiteral() string
@@ -51,6 +53,12 @@ type ExpressionStmt struct {
 	Expression Expr
 }
 
+// Number Literal
+type NumberLiteral struct {
+	Token token.Token
+	Value float64
+}
+
 func (ls *LetStmt) stmtNode() {}
 func (ls *LetStmt) TokenLiteral() string {
 	return ls.Token.Literal
@@ -69,4 +77,9 @@ func (rs *ReturnStmt) TokenLiteral() string {
 func (es *ExpressionStmt) stmtNode() {}
 func (es *ExpressionStmt) TokenLiteral() string {
 	return es.Token.Literal
+}
+
+func (nl *NumberLiteral) exprNode() {}
+func (nl *NumberLiteral) TokenLiteral() string {
+	return nl.Token.Literal
 }

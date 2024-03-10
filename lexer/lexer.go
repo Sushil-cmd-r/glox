@@ -1,15 +1,12 @@
 package lexer
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/sushil-cmd-r/glox/location"
 	"github.com/sushil-cmd-r/glox/token"
 )
 
 type Lexer struct {
-	FileName   string
+	Filepath   string
 	Source     string
 	Offset     int
 	RdOffset   int
@@ -17,16 +14,10 @@ type Lexer struct {
 	Line       int
 }
 
-func New(path string) *Lexer {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-
-	fileName := filepath.Base(path)
+func New(source, filepath string) *Lexer {
 	return &Lexer{
-		FileName:   fileName,
-		Source:     string(content),
+		Filepath:   filepath,
+		Source:     source,
 		Offset:     0,
 		RdOffset:   0,
 		LineOffset: 0,
@@ -39,7 +30,7 @@ func (l *Lexer) Next() token.Token {
 		l.Offset = l.RdOffset
 		ch := l.advance()
 
-		loc := location.New(l.FileName, l.Line, l.LineOffset)
+		loc := location.New(l.Filepath, l.Line, l.LineOffset)
 
 		switch ch {
 		// Single Character Tokens
@@ -99,7 +90,7 @@ func (l *Lexer) Next() token.Token {
 		}
 	}
 
-	return token.New(token.Eof, "Eof", location.New(l.FileName, l.Line, l.LineOffset+1))
+	return token.New(token.Eof, "Eof", location.New(l.Filepath, l.Line, l.LineOffset+1))
 }
 
 func (l *Lexer) scanNumber() token.Token {
@@ -114,7 +105,7 @@ func (l *Lexer) scanNumber() token.Token {
 	}
 
 	tok := l.Source[l.Offset:l.RdOffset]
-	loc := location.New(l.FileName, l.Line, pos)
+	loc := location.New(l.Filepath, l.Line, pos)
 
 	if dotCnt >= 2 {
 		return token.New(token.Illegal, tok, loc)
@@ -124,7 +115,7 @@ func (l *Lexer) scanNumber() token.Token {
 }
 
 func (l *Lexer) scanIdent() token.Token {
-	loc := location.New(l.FileName, l.Line, l.LineOffset)
+	loc := location.New(l.Filepath, l.Line, l.LineOffset)
 
 	for isChar(l.peek()) {
 		l.advance()

@@ -45,6 +45,12 @@ type ReturnStmt struct {
 	ReturnVal Expr
 }
 
+// Expression Stmt
+type ExpressionStmt struct {
+	Token      token.Token
+	Expression Expr
+}
+
 func (ls *LetStmt) stmtNode() {}
 func (ls *LetStmt) TokenLiteral() string {
 	return ls.Token.Literal
@@ -58,4 +64,9 @@ func (i *IdentExpr) TokenLiteral() string {
 func (rs *ReturnStmt) stmtNode() {}
 func (rs *ReturnStmt) TokenLiteral() string {
 	return rs.Token.Literal
+}
+
+func (es *ExpressionStmt) stmtNode() {}
+func (es *ExpressionStmt) TokenLiteral() string {
+	return es.Token.Literal
 }

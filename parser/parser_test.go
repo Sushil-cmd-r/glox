@@ -72,6 +72,36 @@ func TestReturnStmt(t *testing.T) {
 	}
 }
 
+func TestIdentifierExpr(t *testing.T) {
+	input := `foobar;`
+	lex := lexer.New(input, "test.glox")
+	prs := New(lex)
+
+	program := prs.ParseProgram()
+	checkParserErrors(t, prs)
+	if program == nil {
+		t.Fatal("ParseProgram() returned <nil>")
+	}
+	if len(program.Stmts) != 1 {
+		t.Fatalf("program.Stmts does not contain 1 statements. got=%d", len(program.Stmts))
+	}
+
+	stmt, ok := program.Stmts[0].(*ast.ExpressionStmt)
+	if !ok {
+		t.Fatalf("program.Stmts[0] is not *ast.ExpressionStmt. got=%T ", program.Stmts[0])
+	}
+	ident, ok := stmt.Expression.(*ast.IdentExpr)
+	if !ok {
+		t.Fatalf("expr not *ast.IdentExpr, got=%T ", stmt.Expression)
+	}
+	if ident.Value != "foobar" {
+		t.Fatalf("ident.Value is not %s, got=%q", "foobar", ident.Value)
+	}
+	if ident.TokenLiteral() != "foobar" {
+		t.Fatalf("ident.TokenLiteral() is not %s, got=%q", "foobar", ident.TokenLiteral())
+	}
+}
+
 func testLetStmt(t *testing.T, s ast.Stmt, expected string) bool {
 	if s.TokenLiteral() != "let" {
 		t.Errorf("s.TokenLiteral not `let`. got=%q", s.TokenLiteral())

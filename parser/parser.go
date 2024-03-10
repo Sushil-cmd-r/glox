@@ -8,24 +8,64 @@ import (
 	"github.com/sushil-cmd-r/glox/token"
 )
 
+type (
+	prefixParseFn func() ast.Expr
+	infixParseFn  func(lhs ast.Expr) ast.Expr // argument -> left hand side of expression
+)
+
+type Precedence int
+
+const (
+	_ Precedence = iota
+	LOWEST
+	EQUAL       // ==
+	LESSGREATER // > or <
+	SUM         // + -
+	PRODUCT     // * /
+	PREFIX      // -X or !X
+	CALL        // fn()
+)
+
 type Parser struct {
 	lex    *lexer.Lexer
 	errors []error
 
 	currTok token.Token
 	peekTok token.Token
+
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 func New(lex *lexer.Lexer) *Parser {
 	prs := &Parser{
-		lex:    lex,
-		errors: make([]error, 0),
+		lex:            lex,
+		errors:         make([]error, 0),
+		prefixParseFns: make(map[token.TokenType]prefixParseFn),
+		infixParseFns:  make(map[token.TokenType]infixParseFn),
 	}
+
+	prs.registerPrefixFns(token.Identifier, prs.parseIdentifier)
 
 	prs.advance()
 	prs.advance()
 
 	return prs
+}
+
+func (p *Parser) registerPrefixFns(tt token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tt] = fn
+}
+
+func (p *Parser) registerInfixFns(tt token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tt] = fn
+}
+
+func (p *Parser) parseIdentifier() ast.Expr {
+	return &ast.IdentExpr{
+		Token: p.currTok,
+		Value: p.currTok.Literal,
+	}
 }
 
 func (p *Parser) Errors() []error {
@@ -59,7 +99,7 @@ func (p *Parser) parseStmt() (ast.Stmt, error) {
 	case token.Return:
 		return p.parseReturnStmt()
 	default:
-		return nil, fmt.Errorf("unknown statement: %s", p.currTok.Literal)
+		return p.parseExpressionStmt()
 	}
 }
 
@@ -101,6 +141,33 @@ func (p *Parser) parseReturnStmt() (*ast.ReturnStmt, error) {
 	}
 
 	return stmt, nil
+}
+
+func (p *Parser) parseExpressionStmt() (*ast.ExpressionStmt, error) {
+	stmt := &ast.ExpressionStmt{
+		Token: p.currTok,
+	}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+	if stmt.Expression == nil {
+		return nil, fmt.Errorf("unknown expression %s ", p.currTok.Literal)
+	}
+
+	if p.peekTokIs(token.Semi) {
+		p.advance()
+	}
+
+	return stmt, nil
+}
+
+func (p *Parser) parseExpression(_ Precedence) ast.Expr {
+	prefix := p.prefixParseFns[p.currTok.Type]
+	if prefix == nil {
+		return nil
+	}
+	leftExpr := prefix()
+
+	return leftExpr
 }
 
 func (p *Parser) synchronize() {

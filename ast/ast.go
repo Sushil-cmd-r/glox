@@ -66,6 +66,14 @@ type PrefixExpr struct {
 	Right    Expr
 }
 
+// Infix Expr
+type InfixExpr struct {
+	Token    token.Token
+	Left     Expr
+	Operator string
+	Right    Expr
+}
+
 func (ls *LetStmt) stmtNode() {}
 func (ls *LetStmt) TokenLiteral() string {
 	return ls.Token.Literal
@@ -94,4 +102,9 @@ func (nl *NumberLiteral) TokenLiteral() string {
 func (pe *PrefixExpr) exprNode() {}
 func (pe *PrefixExpr) TokenLiteral() string {
 	return pe.Token.Literal
+}
+
+func (ie *InfixExpr) exprNode() {}
+func (ie *InfixExpr) TokenLiteral() string {
+	return ie.Token.Literal
 }

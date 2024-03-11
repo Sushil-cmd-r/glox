@@ -175,6 +175,59 @@ func TestPrefixExpr(t *testing.T) {
 	}
 }
 
+func TestInfixExpr(t *testing.T) {
+	infixTests := []struct {
+		input    string
+		leftVal  float64
+		operator string
+		rightVal float64
+	}{
+		{"5 + 5", 5, "+", 5},
+		{"5 - 5", 5, "-", 5},
+		{"5 * 5", 5, "*", 5},
+		{"5 / 5", 5, "/", 5},
+		{"5 > 5", 5, ">", 5},
+		{"5 < 5", 5, "<", 5},
+		{"5 == 5", 5, "==", 5},
+		{"5 != 5", 5, "!=", 5},
+	}
+
+	for _, tt := range infixTests {
+
+		lex := lexer.New(tt.input, "test.glox")
+		prs := New(lex)
+
+		program := prs.ParseProgram()
+		checkParserErrors(t, prs)
+
+		if len(program.Stmts) != 1 {
+			t.Fatalf("program.Stmts does not contain %d statements, got=%d\n", 1, len(program.Stmts))
+		}
+
+		stmt, ok := program.Stmts[0].(*ast.ExpressionStmt)
+		if !ok {
+			t.Fatalf("program.Stmt[0] is not *ast.ExpressionStmt, got %T", program.Stmts[0])
+		}
+
+		expr, ok := stmt.Expression.(*ast.InfixExpr)
+		if !ok {
+			t.Fatalf("stmt is not InfixExpr, got=%T ", stmt.Expression)
+		}
+
+		if !testNumLiteral(t, expr.Left, tt.leftVal) {
+			return
+		}
+
+		if expr.Operator != tt.operator {
+			t.Fatalf("expr.Operator is not `%s`, got=%s", tt.operator, expr.Operator)
+		}
+
+		if !testNumLiteral(t, expr.Right, tt.rightVal) {
+			return
+		}
+	}
+}
+
 func testLetStmt(t *testing.T, s ast.Stmt, expected string) bool {
 	if s.TokenLiteral() != "let" {
 		t.Errorf("s.TokenLiteral not `let`. got=%q", s.TokenLiteral())

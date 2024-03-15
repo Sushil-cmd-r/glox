@@ -16,6 +16,7 @@ type Stmt interface {
 type Expr interface {
 	Node
 	exprNode()
+	Stringify(depth int) []byte
 }
 
 type Program struct {

@@ -7,6 +7,39 @@ import (
 	"github.com/sushil-cmd-r/glox/lexer"
 )
 
+func TestPrintExpr(t *testing.T) {
+	input := "1 / 2 + -3"
+	/*
+	   Binary: +
+	       Binary: /
+	           Number: 1.00
+	           Number: 2.00
+	       Unary: -
+	           Number: 3.00
+	*/
+	expected := "Binary: +\n\tBinary: /\n\t\tNumber: 1.00\n\t\tNumber: 2.00\n\tUnary: -\n\t\tNumber: 3.00\n"
+
+	lex := lexer.New(input, "test.glox")
+	prs := New(lex)
+
+	program := prs.ParseProgram()
+	checkParserErrors(t, prs)
+	if program == nil {
+		t.Fatal("ParseProgram() returned <nil>")
+	}
+
+	expr, ok := program.Stmts[0].(*ast.ExpressionStmt)
+	if !ok {
+		t.Fatal("Stmt in not an expression")
+	}
+
+	output := expr.Expression.Stringify(0)
+
+	if string(output) != expected {
+		t.Fatalf("Print Error: \nExpected: \n%s\nGot:\n%s\n", expected, string(output))
+	}
+}
+
 func TestLeTStmt(t *testing.T) {
 	input := `
   let x = 5;

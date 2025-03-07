@@ -53,19 +53,24 @@ func (p *Parser) parseStmt() ast.Stmt {
 }
 
 func (p *Parser) parseFuncStmt() *ast.FuncStmt {
-	p.advance()
+	p.expect(token.FUNCTION)
 	name := p.parseIdentifier()
 
 	var params []*ast.IdentExpr
 
 	p.expect(token.LPAREN)
+
 	for p.tok != token.RPAREN && p.tok != token.EOF {
-		expr := p.parseIdentifier()
-		params = append(params, expr)
-		if p.tok == token.RPAREN {
-			break
+		param := p.parseIdentifier()
+		params = append(params, param)
+
+		if p.tok != token.COMMA {
+			if p.tok == token.RPAREN {
+				break
+			}
+			p.errors("missing , in parameter list")
 		}
-		p.expect(token.COMMA)
+		p.advance()
 	}
 
 	p.expect(token.RPAREN)
@@ -118,15 +123,19 @@ func (p *Parser) parsePriamryStmt() ast.Stmt {
 	if p.tok == token.LPAREN {
 		var args []ast.Expr
 		p.advance()
-		if p.tok != token.RPAREN {
-			expr := p.parseExpr(token.PrecLowest)
-			args = append(args, expr)
 
-			for p.tok == token.COMMA && p.tok != token.EOF {
-				p.advance()
-				expr := p.parseExpr(token.PrecLowest)
-				args = append(args, expr)
+		for p.tok != token.RPAREN && p.tok != token.EOF {
+			arg := p.parseExpr(token.PrecLowest)
+			args = append(args, arg)
+
+			if p.tok != token.COMMA {
+				if p.tok == token.RPAREN {
+					break
+				}
+
+				p.errors("missing , in argument list")
 			}
+			p.advance()
 		}
 
 		p.expect(token.RPAREN)

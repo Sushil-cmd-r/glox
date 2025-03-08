@@ -18,7 +18,12 @@ func (vm *VM) run() error {
 		var err error
 		switch op {
 		case OpReturn:
-			return nil
+			vm.fp -= 1
+			if vm.fp == -1 {
+				vm.pop()
+				return nil
+			}
+			vm.currFrame = vm.frames[vm.fp]
 
 		case OpConstant:
 			obj := vm.readConstant()
@@ -169,7 +174,9 @@ func (vm *VM) pop() obj.Obj {
 }
 
 func (vm *VM) readInst() byte {
-	return vm.currFrame.function.ReadInst()
+	offset := vm.currFrame.ip
+	vm.currFrame.ip += 1
+	return vm.currFrame.function.ReadInst(offset)
 }
 
 func (vm *VM) readConstant() obj.Obj {

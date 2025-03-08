@@ -19,7 +19,6 @@ type Func struct {
 
 	arity int
 
-	ip        int
 	code      []byte
 	constants []Obj
 }
@@ -28,7 +27,6 @@ func Function(fType FuncType) *Func {
 	fn := &Func{
 		fType: fType,
 
-		ip:        0,
 		code:      make([]byte, 0),
 		constants: make([]Obj, 0, math.MaxUint8),
 	}
@@ -48,9 +46,8 @@ func (f *Func) String() string {
 	return fmt.Sprintf("<fn %s>", f.name)
 }
 
-func (f *Func) ReadInst() byte {
-	f.ip += 1
-	return f.code[f.ip-1]
+func (f *Func) ReadInst(offset int) byte {
+	return f.code[offset]
 }
 
 func (f *Func) ReadConstant(offset byte) Obj {

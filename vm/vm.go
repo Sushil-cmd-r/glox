@@ -28,7 +28,7 @@ type VM struct {
 }
 
 func Init() *VM {
-	vm := &VM{globals: make(map[string]obj.Obj)}
+	vm := &VM{fp: -1, globals: make(map[string]obj.Obj)}
 
 	vm.compiler = initCompiler(obj.Script)
 	return vm
@@ -59,13 +59,14 @@ func (vm *VM) call(o obj.Obj, args byte) error {
 
 	fn := o.(*obj.Func)
 	frame := &CalLFrame{
+		ip:       0,
 		function: fn,
 		stack:    vm.stack[vm.sp-int(args)-1:],
 	}
 
+	vm.fp += 1
 	vm.currFrame = frame
 	vm.frames[vm.fp] = frame
-	vm.fp += 1
 
 	return nil
 }

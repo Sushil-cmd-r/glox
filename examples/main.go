@@ -10,12 +10,13 @@ import (
 
 func main() {
 	input := []byte(`
-    function add (a, b, c)  {
+    function add (a, b)  {
 			let c = a + b
 			print c
   	}
 
     add(1 ,2 + 4)
+    add(4 ,2 + 4)
   `)
 
 	p := parser.New(input)
@@ -28,7 +29,7 @@ func main() {
 		fmt.Println(stmt)
 	}
 
-	// runCode(input)
+	runCode(input)
 }
 
 func runCode(input []byte) {

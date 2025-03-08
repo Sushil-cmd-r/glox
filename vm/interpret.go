@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 
+	"github.com/sushil-cmd-r/glox/vm/code"
 	"github.com/sushil-cmd-r/glox/vm/obj"
 )
 
@@ -17,7 +18,7 @@ func (vm *VM) run() error {
 
 		var err error
 		switch op {
-		case OpReturn:
+		case code.OpReturn:
 			vm.fp -= 1
 			if vm.fp == -1 {
 				vm.pop()
@@ -25,31 +26,31 @@ func (vm *VM) run() error {
 			}
 			vm.currFrame = vm.frames[vm.fp]
 
-		case OpConstant:
+		case code.OpConstant:
 			obj := vm.readConstant()
 			vm.push(obj)
 
-		case OpAdd, OpSub, OpMul, OpDiv:
+		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv:
 			err = vm.binaryOp(op)
 
-		case OpNegate, OpNot:
+		case code.OpNegate, code.OpNot:
 			err = vm.unaryOp(op)
 
-		case OpNil:
+		case code.OpNil:
 			vm.push(obj.Nil())
 
-		case OpPop:
+		case code.OpPop:
 			vm.pop()
 
-		case OpPrint:
+		case code.OpPrint:
 			fmt.Println(vm.pop())
 
-		case OpDefineGlobal:
+		case code.OpDefineGlobal:
 			oj := vm.readConstant()
 			name := obj.As(oj, obj.StrVal)
 			vm.globals[name] = vm.pop()
 
-		case OpGetGlobal:
+		case code.OpGetGlobal:
 			oj := vm.readConstant()
 			name := obj.As(oj, obj.StrVal)
 			obj, ok := vm.globals[name]
@@ -58,20 +59,20 @@ func (vm *VM) run() error {
 			}
 			vm.push(obj)
 
-		case OpSetGlobal:
+		case code.OpSetGlobal:
 			oj := vm.readConstant()
 			name := obj.As(oj, obj.StrVal)
 			vm.globals[name] = vm.pop()
 
-		case OpGetLocal:
+		case code.OpGetLocal:
 			i := vm.readInst()
 			vm.push(vm.currFrame.stack[i])
 
-		case OpSetLocal:
+		case code.OpSetLocal:
 			i := vm.readInst()
 			vm.currFrame.stack[i] = vm.pop()
 
-		case OpCall:
+		case code.OpCall:
 			args := vm.readInst()
 			if err := vm.call(vm.stack[vm.sp-int(args)-1], args); err != nil {
 				return err
@@ -118,7 +119,7 @@ func (vm *VM) binaryOp(op byte) error {
 }
 
 func (vm *VM) binaryOpString(op byte, a, b obj.Obj) error {
-	if op != OpAdd {
+	if op != code.OpAdd {
 		return fmt.Errorf("invalid operation %d between strings", op)
 	}
 
@@ -137,13 +138,13 @@ func (vm *VM) binaryOpNumber(op byte, a, b obj.Obj) error {
 
 	var res float64
 	switch op {
-	case OpAdd:
+	case code.OpAdd:
 		res = na + nb
-	case OpSub:
+	case code.OpSub:
 		res = na - nb
-	case OpMul:
+	case code.OpMul:
 		res = na * nb
-	case OpDiv:
+	case code.OpDiv:
 		if nb == 0 {
 			return fmt.Errorf("division by zero")
 		}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/sushil-cmd-r/glox/ast"
 	"github.com/sushil-cmd-r/glox/token"
+	"github.com/sushil-cmd-r/glox/vm/code"
 	"github.com/sushil-cmd-r/glox/vm/obj"
 )
 
@@ -44,7 +45,7 @@ func (c *Compiler) compile(prog []ast.Stmt) error {
 			return err
 		}
 	}
-	c.emitInst(OpReturn, nil)
+	c.emitInst(code.OpReturn, nil)
 	return nil
 }
 
@@ -92,10 +93,10 @@ func (c *Compiler) compileFuncStmt(stmt *ast.FuncStmt) error {
 	}
 
 	c1.compileBlockStmt(stmt.Body)
-	c1.emitInst(OpReturn, nil)
+	c1.emitInst(code.OpReturn, nil)
 	c1.endScope()
 
-	c.emitInst(OpConstant, c1.function)
+	c.emitInst(code.OpConstant, c1.function)
 
 	c.defineVariable(arg)
 	return nil
@@ -106,7 +107,7 @@ func (c *Compiler) compilePrintStmt(stmt *ast.PrintStmt) error {
 		return err
 	}
 
-	c.emitInst(OpPrint, nil)
+	c.emitInst(code.OpPrint, nil)
 	return nil
 }
 
@@ -131,7 +132,7 @@ func (c *Compiler) endScope() {
 	c.scopeDepth -= 1
 
 	for i := c.localCount - 1; i >= 0 && c.locals[i].depth > c.scopeDepth; i-- {
-		c.function.EmitInst(OpPop, nil)
+		c.function.EmitInst(code.OpPop, nil)
 		c.localCount -= 1
 	}
 }
@@ -153,9 +154,9 @@ func (c *Compiler) compileAssignStmt(stmt *ast.AssignStmt) error {
 		if err != nil {
 			return err
 		}
-		c.emitInsts(OpSetGlobal, i)
+		c.emitInsts(code.OpSetGlobal, i)
 	} else {
-		c.emitInsts(OpSetLocal, byte(arg))
+		c.emitInsts(code.OpSetLocal, byte(arg))
 	}
 
 	return nil
@@ -219,7 +220,7 @@ func (c *Compiler) defineVariable(i byte) error {
 		return nil
 	}
 
-	c.emitInsts(OpDefineGlobal, i)
+	c.emitInsts(code.OpDefineGlobal, i)
 	return nil
 }
 
@@ -228,7 +229,7 @@ func (c *Compiler) compileExprStmt(stmt *ast.ExprStmt) error {
 		return err
 	}
 
-	c.emitInst(OpPop, nil)
+	c.emitInst(code.OpPop, nil)
 	return nil
 }
 
@@ -258,13 +259,13 @@ func (c *Compiler) compileBinary(expr *ast.BinaryExpr) error {
 
 	switch expr.Op {
 	case token.PLUS:
-		err = c.emitInst(OpAdd, nil)
+		err = c.emitInst(code.OpAdd, nil)
 	case token.MINUS:
-		err = c.emitInst(OpSub, nil)
+		err = c.emitInst(code.OpSub, nil)
 	case token.STAR:
-		err = c.emitInst(OpMul, nil)
+		err = c.emitInst(code.OpMul, nil)
 	case token.SLASH:
-		err = c.emitInst(OpDiv, nil)
+		err = c.emitInst(code.OpDiv, nil)
 	}
 
 	return err
@@ -278,9 +279,9 @@ func (c *Compiler) compileUnary(expr *ast.UnaryExpr) error {
 	var err error
 	switch expr.Op {
 	case token.MINUS:
-		err = c.emitInst(OpNegate, nil)
+		err = c.emitInst(code.OpNegate, nil)
 	case token.NOT:
-		err = c.emitInst(OpNot, nil)
+		err = c.emitInst(code.OpNot, nil)
 	}
 	return err
 }
@@ -289,13 +290,13 @@ func (c *Compiler) compilePrimary(expr ast.Expr) error {
 	switch expr := expr.(type) {
 	case *ast.NumberLit:
 		num := obj.New(expr.Value, obj.Number)
-		return c.emitInst(OpConstant, num)
+		return c.emitInst(code.OpConstant, num)
 
 	case *ast.GroupExpr:
 		return c.compileExpr(expr.Expression)
 
 	case *ast.NilExpr:
-		return c.emitInst(OpNil, nil)
+		return c.emitInst(code.OpNil, nil)
 
 	case *ast.IdentExpr:
 		return c.compileIdent(expr)
@@ -320,7 +321,7 @@ func (c *Compiler) compileCallExpr(expr *ast.CallExpr) error {
 		}
 	}
 
-	c.emitInsts(OpCall, byte(len(expr.Args)))
+	c.emitInsts(code.OpCall, byte(len(expr.Args)))
 	return nil
 }
 
@@ -332,10 +333,10 @@ func (c *Compiler) compileIdent(expr *ast.IdentExpr) error {
 		if err != nil {
 			return err
 		}
-		c.emitInsts(OpGetGlobal, i)
+		c.emitInsts(code.OpGetGlobal, i)
 
 	} else {
-		c.emitInsts(OpGetLocal, byte(arg))
+		c.emitInsts(code.OpGetLocal, byte(arg))
 	}
 
 	return nil

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+
+	"github.com/sushil-cmd-r/glox/vm/code"
 )
 
 type FuncType int
@@ -95,16 +97,16 @@ func (f *Func) PrintCode() {
 
 func (f *Func) printInst(i int) int {
 	b := f.code[i]
-	inst := opcodes[b]
+	inst := code.Opcodes[b]
 	i += 1
 	switch b {
-	case OpConstant, OpGetGlobal, OpSetGlobal, OpDefineGlobal:
+	case code.OpConstant, code.OpGetGlobal, code.OpSetGlobal, code.OpDefineGlobal:
 		idx := f.code[i]
 		constant := f.constants[idx]
 		i += 1
 		fmt.Printf("%15s %s\n", inst, constant)
 
-	case OpGetLocal, OpSetLocal, OpCall:
+	case code.OpGetLocal, code.OpSetLocal, code.OpCall:
 		idx := f.code[i]
 		i += 1
 		fmt.Printf("%15s %d\n", inst, idx)

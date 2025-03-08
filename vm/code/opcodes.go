@@ -1,4 +1,4 @@
-package vm
+package code
 
 type Opcode = byte
 
@@ -22,7 +22,7 @@ const (
 	OpSetLocal
 )
 
-var opcodes = [...]string{
+var Opcodes = [...]string{
 	OpReturn:       "OpReturn",
 	OpConstant:     "OpConstant",
 	OpAdd:          "OpAdd",

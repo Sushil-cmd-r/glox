@@ -35,6 +35,7 @@ const (
 	NIL      // nil
 	PRINT    // print
 	FUNCTION // function
+	FN       // fn
 	keywordEnd
 )
 
@@ -70,6 +71,7 @@ var tokens = [...]string{
 	NIL:      "nil",
 	PRINT:    "print",
 	FUNCTION: "function",
+	FN:       "fn",
 }
 
 func (tok Token) String() string {

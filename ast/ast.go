@@ -34,9 +34,8 @@ type PrintStmt struct {
 }
 
 type FuncStmt struct {
-	Name   *IdentExpr
-	Params []*IdentExpr
-	Body   *BlockStmt
+	Name     *IdentExpr
+	FuncExpr *FuncExpr
 }
 
 func (*ExprStmt) stmtNode()   {}
@@ -89,18 +88,7 @@ func (p *PrintStmt) String() string {
 }
 
 func (f *FuncStmt) String() string {
-	var params []string
-	for _, p := range f.Params {
-		params = append(params, fmt.Sprintf("%s", p))
-	}
-
-	ps := strings.Join(params, ",")
-	var sb strings.Builder
-
-	sb.WriteString(fmt.Sprintf("function %s(%s)", f.Name, ps))
-	sb.WriteString(f.Body.String())
-
-	return sb.String()
+	return fmt.Sprintf("function %s%s\n", f.Name, f.FuncExpr.String()[3:])
 }
 
 type Expr interface {
@@ -141,6 +129,11 @@ type CallExpr struct {
 	Args   []Expr
 }
 
+type FuncExpr struct {
+	Params []*IdentExpr
+	Body   *BlockStmt
+}
+
 func (b *BinaryExpr) exprNode() {}
 func (u *UnaryExpr) exprNode()  {}
 func (g *GroupExpr) exprNode()  {}
@@ -149,6 +142,7 @@ func (s *StringLit) exprNode()  {}
 func (i *IdentExpr) exprNode()  {}
 func (n *NilExpr) exprNode()    {}
 func (c *CallExpr) exprNode()   {}
+func (f *FuncExpr) exprNode()   {}
 
 func (b *BinaryExpr) String() string {
 	return fmt.Sprintf("(%s %s %s)", b.Op, b.Left, b.Right)
@@ -185,4 +179,19 @@ func (c *CallExpr) String() string {
 	}
 
 	return fmt.Sprintf("%s(%s)", c.Callee, strings.Join(args, ","))
+}
+
+func (f *FuncExpr) String() string {
+	var params []string
+	for _, p := range f.Params {
+		params = append(params, fmt.Sprintf("%s", p))
+	}
+
+	ps := strings.Join(params, ",")
+	var sb strings.Builder
+
+	sb.WriteString("fn (" + ps + ") ")
+	sb.WriteString(f.Body.String())
+
+	return sb.String()[:sb.Len()-1]
 }

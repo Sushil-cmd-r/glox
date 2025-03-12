@@ -56,27 +56,8 @@ func (p *Parser) parseFuncStmt() *ast.FuncStmt {
 	p.expect(token.FUNCTION)
 	name := p.parseIdentifier()
 
-	var params []*ast.IdentExpr
-
-	p.expect(token.LPAREN)
-
-	for p.tok != token.RPAREN && p.tok != token.EOF {
-		param := p.parseIdentifier()
-		params = append(params, param)
-
-		if p.tok != token.COMMA {
-			if p.tok == token.RPAREN {
-				break
-			}
-			p.errors("missing , in parameter list")
-		}
-		p.advance()
-	}
-
-	p.expect(token.RPAREN)
-
-	body := p.parseBlockStmt()
-	return &ast.FuncStmt{Name: name, Params: params, Body: body}
+	funcExpr := p.parseFuncExpr()
+	return &ast.FuncStmt{Name: name, FuncExpr: funcExpr}
 }
 
 func (p *Parser) parsePrintStmt() *ast.PrintStmt {
@@ -188,6 +169,8 @@ func (p *Parser) parsePrimary() ast.Expr {
 		return p.parseIdentifier()
 	case token.LPAREN:
 		return p.parseGroup()
+	case token.FN:
+		return p.parseFuncExpr()
 
 	default:
 		p.expectError("expression")
@@ -225,9 +208,35 @@ func (p *Parser) parseGroup() *ast.GroupExpr {
 	p.assertTok(token.LPAREN)
 
 	expr := p.parseExpr(token.PrecLowest)
-	p.expect(token.RPAREN)
 
+	p.expect(token.RPAREN)
 	return &ast.GroupExpr{Expression: expr}
+}
+
+func (p *Parser) parseFuncExpr() *ast.FuncExpr {
+	if p.tok == token.FN {
+		p.advance()
+	}
+
+	var params []*ast.IdentExpr
+	p.expect(token.LPAREN)
+	for p.tok != token.RPAREN && p.tok != token.EOF {
+		expr := p.parseIdentifier()
+
+		if p.tok != token.COMMA {
+			if p.tok == token.RPAREN {
+				break
+			}
+			p.errors("missing , in parameter list")
+		}
+		params = append(params, expr)
+		p.advance()
+	}
+
+	p.expect(token.RPAREN)
+	body := p.parseBlockStmt()
+
+	return &ast.FuncExpr{Params: params, Body: body}
 }
 
 func (p *Parser) expectSemi() {

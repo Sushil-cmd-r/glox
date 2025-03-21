@@ -47,12 +47,12 @@ func (vm *VM) run() error {
 
 		case code.OpDefineGlobal:
 			oj := vm.readConstant()
-			name := obj.As(oj, obj.StrVal)
+			name := obj.AsStr(oj)
 			vm.globals[name] = vm.pop()
 
 		case code.OpGetGlobal:
 			oj := vm.readConstant()
-			name := obj.As(oj, obj.StrVal)
+			name := obj.AsStr(oj)
 			obj, ok := vm.globals[name]
 			if !ok {
 				return fmt.Errorf("undefined variable: %s", name)
@@ -61,7 +61,7 @@ func (vm *VM) run() error {
 
 		case code.OpSetGlobal:
 			oj := vm.readConstant()
-			name := obj.As(oj, obj.StrVal)
+			name := obj.AsStr(oj)
 			vm.globals[name] = vm.pop()
 
 		case code.OpGetLocal:
@@ -92,8 +92,8 @@ func (vm *VM) unaryOp(_ byte) error {
 		return fmt.Errorf("invalid unary operation on %s", a.Type())
 	}
 
-	val := obj.As(a, obj.NumVal)
-	vm.push(obj.New(val*-1, obj.Number))
+	val := obj.AsNum(a)
+	vm.push(obj.NewNumber(val * -1))
 
 	return nil
 }
@@ -123,18 +123,18 @@ func (vm *VM) binaryOpString(op byte, a, b obj.Obj) error {
 		return fmt.Errorf("invalid operation %d between strings", op)
 	}
 
-	sa := obj.As(a, obj.StrVal)
-	sb := obj.As(b, obj.StrVal)
+	sa := obj.AsStr(a)
+	sb := obj.AsStr(b)
 
-	obj := obj.New(sa+sb, obj.Str)
+	obj := obj.NewStr(sa + sb)
 	vm.push(obj)
 
 	return nil
 }
 
 func (vm *VM) binaryOpNumber(op byte, a, b obj.Obj) error {
-	na := obj.As(a, obj.NumVal)
-	nb := obj.As(b, obj.NumVal)
+	na := obj.AsNum(a)
+	nb := obj.AsNum(b)
 
 	var res float64
 	switch op {
@@ -151,7 +151,7 @@ func (vm *VM) binaryOpNumber(op byte, a, b obj.Obj) error {
 		res = na / nb
 	}
 
-	obj := obj.New(res, obj.Number)
+	obj := obj.NewNumber(res)
 	vm.push(obj)
 
 	return nil

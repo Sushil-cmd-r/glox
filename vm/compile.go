@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -11,17 +12,24 @@ import (
 )
 
 type Compiler struct {
-	function *obj.Func
+	code      []byte
+	constants []obj.Obj
 
 	locals [math.MaxUint8]Local
 
 	localCount int
 	scopeDepth int
+
+	debug bool
 }
 
-func initCompiler(t obj.FuncType) *Compiler {
+func initCompiler() *Compiler {
 	c := &Compiler{
-		function: obj.New(t, obj.Function),
+		code:      make([]byte, 0),
+		constants: make([]obj.Obj, 0),
+
+		localCount: 0,
+		scopeDepth: 0,
 	}
 
 	l := Local{depth: 0, name: ""}
@@ -31,22 +39,44 @@ func initCompiler(t obj.FuncType) *Compiler {
 	return c
 }
 
-func (c *Compiler) Compile(prog []ast.Stmt) (*obj.Func, error) {
-	if err := c.compile(prog); err != nil {
-		return nil, fmt.Errorf("Compilation Error: %w", err)
+var annonymousCnt = 0
+
+func Compile(prog *ast.FuncExpr, fname string, debug bool) (*obj.Function, error) {
+	c := initCompiler()
+	c.debug = debug
+
+	if fname != InitFunc {
+		c.beginScope()
 	}
 
-	return c.function, nil
-}
+	for _, p := range prog.Params {
+		arg, err := c.registerDeclaration(p)
+		if err != nil {
+			return nil, err
+		}
 
-func (c *Compiler) compile(prog []ast.Stmt) error {
-	for _, stmt := range prog {
-		if err := c.compileStmt(stmt); err != nil {
-			return err
+		if err := c.defineVariable(arg); err != nil {
+			return nil, err
 		}
 	}
+
+	for _, stmt := range prog.Body.Stmts {
+		if err := c.compileStmt(stmt); err != nil {
+			return nil, err
+		}
+	}
+
 	c.emitInst(code.OpReturn, nil)
-	return nil
+	if fname != InitFunc {
+		c.endScope()
+	}
+
+	fn := obj.NewFunction(fname, len(prog.Params), c.code, c.constants)
+
+	if debug {
+		fn.PrintCode()
+	}
+	return fn, nil
 }
 
 func (c *Compiler) compileStmt(stmt ast.Stmt) error {
@@ -80,24 +110,13 @@ func (c *Compiler) compileFuncStmt(stmt *ast.FuncStmt) error {
 		return err
 	}
 
-	c1 := initCompiler(obj.Funct)
-	c1.function.SetName(stmt.Name.String())
-	c1.beginScope()
-	for _, p := range stmt.Params {
-		arg, err := c1.registerDeclaration(p)
-		if err != nil {
-			return err
-		}
-
-		c1.defineVariable(arg)
+	ident := stmt.Name
+	fn, err := Compile(stmt.FuncExpr, ident.Name, c.debug)
+	if err != nil {
+		return err
 	}
 
-	c1.compileBlockStmt(stmt.Body)
-	c1.emitInst(code.OpReturn, nil)
-	c1.endScope()
-
-	c.emitInst(code.OpConstant, c1.function)
-
+	c.emitInst(code.OpConstant, fn)
 	c.defineVariable(arg)
 	return nil
 }
@@ -132,7 +151,7 @@ func (c *Compiler) endScope() {
 	c.scopeDepth -= 1
 
 	for i := c.localCount - 1; i >= 0 && c.locals[i].depth > c.scopeDepth; i-- {
-		c.function.EmitInst(code.OpPop, nil)
+		c.emitInst(code.OpPop, nil)
 		c.localCount -= 1
 	}
 }
@@ -149,7 +168,7 @@ func (c *Compiler) compileAssignStmt(stmt *ast.AssignStmt) error {
 
 	arg := c.resolveLocal(ident.Name)
 	if arg == -1 {
-		name := obj.New(ident.Name, obj.Str)
+		name := obj.NewStr(ident.Name)
 		i, err := c.addConstant(name)
 		if err != nil {
 			return err
@@ -184,7 +203,7 @@ func (c *Compiler) registerDeclaration(ident *ast.IdentExpr) (byte, error) {
 		return 0, nil
 	}
 
-	str := obj.New(ident.Name, obj.Str)
+	str := obj.NewStr(ident.Name)
 	return c.addConstant(str)
 }
 
@@ -289,7 +308,7 @@ func (c *Compiler) compileUnary(expr *ast.UnaryExpr) error {
 func (c *Compiler) compilePrimary(expr ast.Expr) error {
 	switch expr := expr.(type) {
 	case *ast.NumberLit:
-		num := obj.New(expr.Value, obj.Number)
+		num := obj.NewNumber(expr.Value)
 		return c.emitInst(code.OpConstant, num)
 
 	case *ast.GroupExpr:
@@ -303,6 +322,14 @@ func (c *Compiler) compilePrimary(expr ast.Expr) error {
 
 	case *ast.CallExpr:
 		return c.compileCallExpr(expr)
+
+	case *ast.FuncExpr:
+		fn, err := Compile(expr, fmt.Sprintf("Annonymous:%d", annonymousCnt), c.debug)
+		annonymousCnt += 1
+		if err != nil {
+			return err
+		}
+		return c.emitInst(code.OpConstant, fn)
 
 	default:
 		fmt.Printf("%T\n", expr)
@@ -328,7 +355,7 @@ func (c *Compiler) compileCallExpr(expr *ast.CallExpr) error {
 func (c *Compiler) compileIdent(expr *ast.IdentExpr) error {
 	arg := c.resolveLocal(expr.Name)
 	if arg == -1 {
-		str := obj.New(expr.Name, obj.Str)
+		str := obj.NewStr(expr.Name)
 		i, err := c.addConstant(str)
 		if err != nil {
 			return err
@@ -353,13 +380,29 @@ func (c *Compiler) resolveLocal(name string) int {
 }
 
 func (c *Compiler) emitInst(opcode byte, o obj.Obj) error {
-	return c.function.EmitInst(opcode, o)
+	c.code = append(c.code, opcode)
+
+	if o != nil {
+		idx, err := c.addConstant(o)
+		if err != nil {
+			return err
+		}
+		c.code = append(c.code, idx)
+	}
+
+	return nil
 }
 
 func (c *Compiler) emitInsts(o1, o2 byte) {
-	c.function.EmitInsts(o1, o2)
+	c.code = append(c.code, o1, o2)
 }
 
+var ErrTooManyconstants = errors.New("too many constants")
+
 func (c *Compiler) addConstant(o obj.Obj) (byte, error) {
-	return c.function.AddConstant(o)
+	if len(c.constants) == math.MaxUint8 {
+		return 0, ErrTooManyconstants
+	}
+	c.constants = append(c.constants, o)
+	return byte(len(c.constants) - 1), nil
 }

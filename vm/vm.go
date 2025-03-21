@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/sushil-cmd-r/glox/ast"
 	"github.com/sushil-cmd-r/glox/parser"
 	"github.com/sushil-cmd-r/glox/vm/obj"
 )
 
+const InitFunc = "<init>"
+
 type CalLFrame struct {
-	function *obj.Func
+	function *obj.Function
 	ip       int
 	stack    []obj.Obj
 }
@@ -23,14 +26,11 @@ type VM struct {
 	stack [64 * math.MaxUint8]obj.Obj
 
 	globals map[string]obj.Obj
-
-	compiler *Compiler
+	debug   bool
 }
 
-func Init() *VM {
-	vm := &VM{fp: -1, globals: make(map[string]obj.Obj)}
-
-	vm.compiler = initCompiler(obj.Script)
+func Init(debug bool) *VM {
+	vm := &VM{fp: -1, globals: make(map[string]obj.Obj), debug: debug}
 	return vm
 }
 
@@ -41,7 +41,8 @@ func (vm *VM) Execute(src []byte) error {
 		return fmt.Errorf("Syntax Error: %w", err)
 	}
 
-	function, err := vm.compiler.Compile(prog)
+	fnExpr := &ast.FuncExpr{Params: nil, Body: &ast.BlockStmt{Stmts: prog}}
+	function, err := Compile(fnExpr, InitFunc, vm.debug)
 	if err != nil {
 		return fmt.Errorf("Compilation Error: %w", err)
 	}
@@ -57,7 +58,7 @@ func (vm *VM) call(o obj.Obj, args byte) error {
 		return fmt.Errorf("%s not callable", o.Type())
 	}
 
-	fn := o.(*obj.Func)
+	fn := o.(*obj.Function)
 	frame := &CalLFrame{
 		ip:       0,
 		function: fn,
@@ -69,8 +70,4 @@ func (vm *VM) call(o obj.Obj, args byte) error {
 	vm.frames[vm.fp] = frame
 
 	return nil
-}
-
-func (vm *VM) PrintCode() {
-	vm.compiler.function.PrintCode()
 }

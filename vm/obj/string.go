@@ -1,23 +1,21 @@
 package obj
 
-import "fmt"
-
-type str struct {
+type Str struct {
 	value string
 }
 
-func Str(val string) *str {
-	return &str{value: val}
+func NewStr(val string) *Str {
+	return &Str{value: val}
 }
 
-func (s *str) Type() ObjType {
+func (s *Str) Type() ObjType {
 	return StringObj
 }
 
-func StrVal(o Obj) string {
-	return o.(*str).value
+func AsStr(o Obj) string {
+	return o.(*Str).value
 }
 
-func (s *str) String() string {
-	return fmt.Sprintf("String{value: %v}", s.value)
+func (s *Str) String() string {
+	return s.value
 }

@@ -1,92 +1,54 @@
 package obj
 
 import (
-	"errors"
 	"fmt"
-	"math"
 
 	"github.com/sushil-cmd-r/glox/vm/code"
 )
 
-type FuncType int
-
-const (
-	Script FuncType = iota
-	Funct
-)
-
-type Func struct {
-	fType FuncType
+type Function struct {
 	name  string
-
 	arity int
 
 	code      []byte
 	constants []Obj
 }
 
-func Function(fType FuncType) *Func {
-	fn := &Func{
-		fType: fType,
+func NewFunction(name string, arity int, code []byte, constants []Obj) *Function {
+	fn := &Function{
+		name:  name,
+		arity: arity,
 
-		code:      make([]byte, 0),
-		constants: make([]Obj, 0, math.MaxUint8),
+		code:      code,
+		constants: constants,
 	}
 
 	return fn
 }
 
-func (f *Func) SetName(name string) {
+func (f *Function) SetName(name string) {
 	f.name = name
 }
 
-func (f *Func) Type() ObjType {
+func (f *Function) Type() ObjType {
 	return FuncObj
 }
 
-func (f *Func) String() string {
+func (f *Function) String() string {
 	return fmt.Sprintf("<fn %s>", f.name)
 }
 
-func (f *Func) ReadInst(offset int) byte {
+func (f *Function) ReadInst(offset int) byte {
 	return f.code[offset]
 }
 
-func (f *Func) ReadConstant(offset byte) Obj {
+func (f *Function) ReadConstant(offset byte) Obj {
 	return f.constants[offset]
 }
 
-func (f *Func) EmitInst(opcode byte, o Obj) error {
-	f.code = append(f.code, opcode)
-
-	if o != nil {
-		idx, err := f.AddConstant(o)
-		if err != nil {
-			return err
-		}
-		f.code = append(f.code, idx)
-	}
-
-	return nil
-}
-
-func (f *Func) EmitInsts(o1, o2 byte) {
-	f.code = append(f.code, o1, o2)
-}
-
-var ErrTooManyconstants = errors.New("too many constants")
-
-func (f *Func) AddConstant(o Obj) (byte, error) {
-	if len(f.constants) == math.MaxUint8 {
-		return 0, ErrTooManyconstants
-	}
-	f.constants = append(f.constants, o)
-	return byte(len(f.constants) - 1), nil
-}
-
-func (f *Func) PrintCode() {
+func (f *Function) PrintCode() {
 	name := f.name
-	if name == "" {
+	if name == "<init>" {
 		name = "script"
 	}
 	fmt.Printf("<%s>\n", name)
@@ -95,7 +57,7 @@ func (f *Func) PrintCode() {
 	}
 }
 
-func (f *Func) printInst(i int) int {
+func (f *Function) printInst(i int) int {
 	b := f.code[i]
 	inst := code.Opcodes[b]
 	i += 1

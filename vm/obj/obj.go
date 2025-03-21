@@ -5,14 +5,6 @@ type Obj interface {
 	String() string
 }
 
-func New[V Obj, T any](val T, constructor func(T) V) V {
-	return constructor(val)
-}
-
-func As[V Obj, T string | float64](v V, val func(V) T) T {
-	return val(v)
-}
-
 type ObjType int
 
 const (

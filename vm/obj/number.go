@@ -2,22 +2,22 @@ package obj
 
 import "fmt"
 
-type number struct {
+type Number struct {
 	value float64
 }
 
-func Number(val float64) *number {
-	return &number{value: val}
+func NewNumber(val float64) *Number {
+	return &Number{value: val}
 }
 
-func (n *number) Type() ObjType {
+func (n *Number) Type() ObjType {
 	return NumberObj
 }
 
-func NumVal(o Obj) float64 {
-	return o.(*number).value
+func AsNum(o Obj) float64 {
+	return o.(*Number).value
 }
 
-func (n *number) String() string {
-	return fmt.Sprintf("Number{value: %v}", n.value)
+func (n *Number) String() string {
+	return fmt.Sprintf("%v", n.value)
 }

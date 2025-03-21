@@ -223,13 +223,13 @@ func (p *Parser) parseFuncExpr() *ast.FuncExpr {
 	for p.tok != token.RPAREN && p.tok != token.EOF {
 		expr := p.parseIdentifier()
 
+		params = append(params, expr)
 		if p.tok != token.COMMA {
 			if p.tok == token.RPAREN {
 				break
 			}
 			p.errors("missing , in parameter list")
 		}
-		params = append(params, expr)
 		p.advance()
 	}
 
